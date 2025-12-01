@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meteo & Valigia Tour Guide 🎧🧳</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #ff00ff 0%, #111 40%, #00ffff 100%);
+      color: #fdfdfd;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 1100px;
+      width: 100%;
+      background: rgba(10, 10, 20, 0.92);
+      border-radius: 20px;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.4);
+      padding: 20px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 255, 255, 0.4);
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 span.logo {
+      font-size: 1.9rem;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      max-width: 420px;
+    }
+
+    .pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: linear-gradient(90deg, rgba(255, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr);
+      gap: 18px;
+    }
+
+    @media (max-width: 820px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: radial-gradient(circle at top, rgba(0, 255, 255, 0.18), rgba(10, 10, 20, 0.9));
+      border-radius: 18px;
+      padding: 14px 14px 16px;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.25);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      display: block;
+      margin-bottom: 4px;
+      opacity: 0.85;
+    }
+
+    input, button {
+      font: inherit;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    input[type="text"],
+    input[type="date"] {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 255, 255, 0.4);
+      background: rgba(5, 5, 15, 0.95);
+      color: #fdfdfd;
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    input::placeholder {
+      color: rgba(220, 220, 255, 0.55);
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+      background: linear-gradient(90deg, #ff00ff, #ffea00, #00ffff);
+      color: #000;
+      box-shadow: 0 0 12px rgba(255, 0, 255, 0.6);
+      white-space: nowrap;
+    }
+
+    .btn.small {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+
+    .btn.secondary {
+      background: linear-gradient(90deg, #00ffff, #00ff88);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+      filter: brightness(1.05);
+    }
+
+    .trip-list {
+      margin-top: 10px;
+      max-height: 160px;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .trip-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      font-size: 0.85rem;
+    }
+
+    .trip-item strong {
+      font-weight: 600;
+    }
+
+    .trip-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      opacity: 0.9;
+      font-size: 0.8rem;
+    }
+
+    .trip-remove {
+      border: none;
+      background: transparent;
+      color: #ff8a8a;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .helper-text {
+      font-size: 0.8rem;
+      opacity: 0.75;
+      margin-top: 6px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.6), transparent);
+      margin: 8px 0 10px;
+    }
+
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .api-warning {
+      font-size: 0.75rem;
+      opacity: 0.7;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .results-header span {
+      font-size: 0.85rem;
+      opacity: 0.85;
+    }
+
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, rgba(0, 255, 187, 0.22), rgba(90, 0, 255, 0.35));
+      border-radius: 16px;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 255, 255, 0.45);
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+      column-gap: 10px;
+      row-gap: 6px;
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 650px) {
+      .result-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .result-main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .city-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .weather-pill {
+      font-size: 0.8rem;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .temp {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .conditions {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.74rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.35);
+      margin-top: 4px;
+    }
+
+    .packing, .music {
+      font-size: 0.8rem;
+      line-height: 1.35;
+    }
+
+    .section-title {
+      font-size: 0.78rem;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .status {
+      font-size: 0.8rem;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+
+    .status.loading {
+      color: #ffea00;
+    }
+
+    .status.error {
+      color: #ff8a8a;
+    }
+
+    .status.ok {
+      color: #9dffb9;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 255, 0.7);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>
+          <span class="logo">🌈🧳</span>
+          Meteo & Valigia Tour Guide
+        </h1>
+        <p>
+          Inserisci le tappe del tuo viaggio: l’app guarda il meteo città per città
+          e ti dice cosa mettere in valigia… con soundtrack personalizzata 🎧✨
+        </p>
+      </div>
+      <div class="pill">
+        <span>🔥 Mood neon • 🎵 Consigli musicali • 🌦️ Meteo smart</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- Colonna sinistra: Pianificazione viaggio -->
+      <section class="card">
+        <h2>🎯 Pianifica le tappe</h2>
+        <p class="helper-text">
+          Aggiungi ogni città che visiterai con la data prevista. Poi clicca
+          <strong>“Scansiona meteo & valigia”</strong>.
+        </p>
+
+        <div class="divider"></div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="cityInput">Città 🌍</label>
+            <input id="cityInput" type="text" placeholder="Es. Milano, Parigi, Tokyo..." />
+          </div>
+          <div class="field">
+            <label for="dateInput">Data 📅</label>
+            <input id="dateInput" type="date" />
+          </div>
+          <div class="field" style="align-self: flex-end;">
+            <button id="addStopBtn" class="btn small" type="button">
+              ➕ Aggiungi tappa
+            </button>
+          </div>
+        </div>
+
+        <p class="helper-text">
+          Suggerimento: ordina le tappe nell’ordine di viaggio (giorno per giorno).
+        </p>
+
+        <div class="trip-list" id="tripList"></div>
+
+        <div class="actions-row">
+          <button id="scanWeatherBtn" class="btn secondary" type="button">
+            🌦️🧳 Scansiona meteo & valigia
+          </button>
+          <span class="api-warning">
+            ⚙️ Usa l’API di <strong>OpenWeatherMap</strong>.<br />
+            Ricorda di inserire la tua API key nel codice!
+          </span>
+        </div>
+
+        <p class="helper-text" style="margin-top: 6px;">
+          Vuoi solo fare prove? Aggiungi città a caso e gioca con i consigli outfit & musica 👗🎶
+        </p>
+      </section>
+
+      <!-- Colonna destra: Risultati -->
+      <section class="card">
+        <div class="results-header">
+          <h2>📡 Meteo, Valigia & Playlist</h2>
+          <span>Ogni tappa ha il suo mood 👟☂️😎</span>
+        </div>
+        <div class="divider"></div>
+
+        <div class="status" id="statusMessage"></div>
+        <div class="result-list" id="results"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ INSERISCI QUI LA TUA API KEY DI OPENWEATHERMAP
+    const OPENWEATHER_API_KEY = "INSERISCI_LA_TUA_API_KEY_QUI";
+
+    const trip = [];
+
+    const cityInput = document.getElementById("cityInput");
+    const dateInput = document.getElementById("dateInput");
+    const addStopBtn = document.getElementById("addStopBtn");
+    const tripList = document.getElementById("tripList");
+    const scanWeatherBtn = document.getElementById("scanWeatherBtn");
+    const resultsContainer = document.getElementById("results");
+    const statusMessage = document.getElementById("statusMessage");
+
+    addStopBtn.addEventListener("click", () => {
+      const city = cityInput.value.trim();
+      const date = dateInput.value;
+
+      if (!city) {
+        setStatus("Inserisci almeno il nome della città 🌍", "error");
+        return;
+      }
+
+      trip.push({ city, date });
+      cityInput.value = "";
+      dateInput.value = "";
+
+      renderTripList();
+      setStatus("Tappa aggiunta! Continua oppure avvia la scansione meteo 💫", "ok");
+    });
+
+    function renderTripList() {
+      tripList.innerHTML = "";
+      if (trip.length === 0) {
+        tripList.innerHTML = '<p class="helper-text">Nessuna tappa aggiunta… ancora 😉</p>';
+        return;
+      }
+
+      trip.forEach((stop, index) => {
+        const div = document.createElement("div");
+        div.className = "trip-item";
+
+        const left = document.createElement("div");
+        const citySpan = document.createElement("strong");
+        citySpan.textContent = stop.city;
+        left.appendChild(citySpan);
+
+        const meta = document.createElement("div");
+        meta.className = "trip-meta";
+
+        const order = document.createElement("span");
+        order.textContent = `Tappa #${index + 1}`;
+        meta.appendChild(order);
+
+        if (stop.date) {
+          const date = new Date(stop.date);
+          const formatted = date.toLocaleDateString("it-IT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+          });
+          const dateSpan = document.createElement("span");
+          dateSpan.textContent = `📅 ${formatted}`;
+          meta.appendChild(dateSpan);
+        } else {
+          const noDate = document.createElement("span");
+          noDate.textContent = "📅 data non impostata";
+          meta.appendChild(noDate);
+        }
+
+        left.appendChild(meta);
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "trip-remove";
+        removeBtn.innerHTML = "✖";
+        removeBtn.title = "Rimuovi tappa";
+        removeBtn.addEventListener("click", () => {
+          trip.splice(index, 1);
+          renderTripList();
+        });
+
+        div.appendChild(left);
+        div.appendChild(removeBtn);
+        tripList.appendChild(div);
+      });
+    }
+
+    scanWeatherBtn.addEventListener("click", async () => {
+      if (trip.length === 0) {
+        setStatus("Prima aggiungi almeno una tappa ✈️", "error");
+        return;
+      }
+
+      if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY.startsWith("INSERISCI")) {
+        setStatus("❗ Inserisci la tua API key OpenWeatherMap nel codice per attivare il meteo in tempo reale.", "error");
+        return;
+      }
+
+      resultsContainer.innerHTML = "";
+      setStatus("Sto sincronizzando meteo, outfit e playlist… 🎧🌦️🧳", "loading");
+
+      for (const stop of trip) {
+        try {
+          const data = await fetchWeather(stop.city);
+          const card = buildResultCard(stop, data);
+          resultsContainer.appendChild(card);
+        } catch (err) {
+          console.error(err);
+          const errorCard = document.createElement("div");
+          errorCard.className = "result-card";
+          errorCard.innerHTML = `
+            <div>
+              <div class="result-main-header">
+                <div class="city-name">⚠️ ${stop.city}</div>
+              </div>
+              <p class="packing">Non sono riuscito a recuperare il meteo per questa tappa. Controlla il nome della città o la connessione.</p>
+            </div>
+            <div class="music">
+              <div class="section-title">🎵 Mood di emergenza</div>
+              <p>Vai di classico “road trip”: rock leggero, playlist anni '80/'90, oppure un po' di lo-fi per pianificare con calma.</p>
+            </div>
+          `;
+          resultsContainer.appendChild(errorCard);
+        }
+      }
+
+      setStatus("Done! Scorri le tappe e sistema la valigia come un* pro ✨", "ok");
+    });
+
+    async function fetchWeather(city) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
+        city
+      )}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=it`;
+
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error("Weather API error");
+      }
+      return resp.json();
+    }
+
+    function buildResultCard(stop, data) {
+      const card = document.createElement("div");
+      card.className = "result-card";
+
+      const main = document.createElement("div");
+      const side = document.createElement("div");
+
+      // --- MAIN (meteo + valigia) ---
+      const header = document.createElement("div");
+      header.className = "result-main-header";
+
+      const cityName = document.createElement("div");
+      cityName.className = "city-name";
+
+      const iconEmoji = pickWeatherEmoji(data);
+      cityName.innerHTML = `${iconEmoji} ${stop.city}`;
+
+      const weatherPill = document.createElement("div");
+      weatherPill.className = "weather-pill";
+
+      const temp = Math.round(data.main.temp);
+      const conditionText = data.weather && data.weather[0] ? data.weather[0].description : "Meteo non disponibile";
+
+      const tempSpan = document.createElement("span");
+      tempSpan.className = "temp";
+      tempSpan.textContent = `${temp}°C`;
+
+      const condSpan = document.createElement("span");
+      condSpan.className = "conditions";
+      condSpan.textContent = conditionText;
+
+      weatherPill.appendChild(tempSpan);
+      weatherPill.appendChild(condSpan);
+
+      header.appendChild(cityName);
+      header.appendChild(weatherPill);
+
+      const packingDiv = document.createElement("div");
+      packingDiv.className = "packing";
+
+      const packingTitle = document.createElement("div");
+      packingTitle.className = "section-title";
+      packingTitle.innerHTML = "🧳 Packing tips";
+
+      const packingBody = document.createElement("p");
+      packingBody.textContent = buildPackingAdvice(temp, conditionText);
+
+      const tag = document.createElement("div");
+      tag.className = "tag";
+      tag.innerHTML = `<span class="badge">Outfit mood</span> ${buildOutfitTag(temp, conditionText)}`;
+
+      packingDiv.appendChild(packingTitle);
+      packingDiv.appendChild(packingBody);
+      packingDiv.appendChild(tag);
+
+      main.appendChild(header);
+
+      if (stop.date) {
+        const dateInfo = document.createElement("div");
+        dateInfo.className = "helper-text";
+        const date = new Date(stop.date);
+        const formatted = date.toLocaleDateString("it-IT", {
+          weekday: "short",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+        dateInfo.innerHTML = `📅 Arrivo previsto: <strong>${formatted}</strong>`;
+        main.appendChild(dateInfo);
+      }
+
+      main.appendChild(packingDiv);
+
+      // --- SIDE (musica) ---
+      const musicDiv = document.createElement("div");
+      musicDiv.className = "music";
+
+      const musicTitle = document.createElement("div");
+      musicTitle.className = "section-title";
+      musicTitle.innerHTML = "🎵 Soundtrack consigliata";
+
+      const musicBody = document.createElement("ul");
+      musicBody.style.marginLeft = "16px";
+      musicBody.style.listStyle = "'♪ '";
+
+      const suggestions = buildMusicSuggestions(temp, conditionText);
+
+      suggestions.forEach((s) => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "2px";
+        li.textContent = s;
+        musicBody.appendChild(li);
+      });
+
+      musicDiv.appendChild(musicTitle);
+      musicDiv.appendChild(musicBody);
+
+      side.appendChild(musicDiv);
+
+      card.appendChild(main);
+      card.appendChild(side);
+
+      return card;
+    }
+
+    function pickWeatherEmoji(data) {
+      if (!data.weather || !data.weather[0]) return "🌈";
+      const id = data.weather[0].id;
+      if (id >= 200 && id < 300) return "⛈️";
+      if (id >= 300 && id < 600) return "🌧️";
+      if (id >= 600 && id < 700) return "❄️";
+      if (id === 800) return "☀️";
+      if (id > 800) return "⛅";
+      return "🌈";
+    }
+
+    function buildPackingAdvice(temp, conditionText) {
+      const condition = (conditionText || "").toLowerCase();
+      const base = [];
+
+      if (temp <= 5) {
+        base.push("Porta un cappotto serio, maglioni caldi, sciarpa e magari guanti.");
+      } else if (temp <= 13) {
+        base.push("Meglio vestirsi a strati: felpe, giacca leggera e qualcosa a maniche lunghe.");
+      } else if (temp <= 22) {
+        base.push("Clima medio: t-shirt, uno strato extra per la sera e scarpe comode da camminata.");
+      } else if (temp <= 30) {
+        base.push("Fa caldo! T-shirt leggere, pantaloncini/abiti estivi e occhiali da sole.");
+      } else {
+        base.push("Caldo intenso: vestiti super leggeri, cappellino, occhiali da sole e tanta acqua.");
+      }
+
+      if (condition.includes("pioggia") || condition.includes("pioviggine") || condition.includes("temporale")) {
+        base.push("Non dimenticare un impermeabile compatto o k-way e un ombrello pieghevole.");
+      }
+      if (condition.includes("neve")) {
+        base.push("Scarpe impermeabili o doposci e calze termiche sono d’obbligo.");
+      }
+      if (condition.includes("vento")) {
+        base.push("Aggiungi una giacca antivento o un guscio leggero.");
+      }
+      if (condition.includes("sole") || condition.includes("sereno")) {
+        base.push("Crema solare e occhiali da sole per goderti la luce senza pensieri.");
+      }
+
+      return base.join(" ");
+    }
+
+    function buildOutfitTag(temp, conditionText) {
+      const condition = (conditionText || "").toLowerCase();
+      if (temp <= 5) return "❄️ Winter warrior mode";
+      if (temp <= 13) return "🍂 Layered chic";
+      if (temp <= 22 && condition.includes("pioggia")) return "☔ Urban rainproof";
+      if (temp <= 22) return "🌤️ Smart casual explorer";
+      if (temp > 30) return "🔥 Light & breezy survivor";
+      if (condition.includes("neve")) return "🏂 Snow trip ready";
+      if (condition.includes("pioggia")) return "🌧️ Rainy day street style";
+      return "😎 Easy travel vibes";
+    }
+
+    function buildMusicSuggestions(temp, conditionText) {
+      const condition = (conditionText || "").toLowerCase();
+      const suggestions = [];
+
+      if (condition.includes("pioggia") || condition.includes("temporale")) {
+        suggestions.push("Playlist lo-fi / chillhop per guardare la pioggia dal bar ☕");
+        suggestions.push("Un po’ di jazz morbido o neo-soul per tenere alto il mood.");
+        suggestions.push("Brani acustici soft per leggere o pianificare le prossime tappe.");
+      } else if (condition.includes("neve")) {
+        suggestions.push("Indie/folk caldo da baita ❄️");
+        suggestions.push("Colonne sonore cinematografiche per passeggiate lente sulla neve.");
+        suggestions.push("Piano jazz & chill per serate in hotel con cioccolata calda.");
+      } else if (temp >= 26) {
+        suggestions.push("Hit pop estive ad alto volume per camminare al sole ☀️");
+        suggestions.push("Reggaeton/latin vibes per aperitivi e tramonti sul lungomare.");
+        suggestions.push("House melodica o tropical house per le serate all’aperto.");
+      } else if (temp <= 10) {
+        suggestions.push("Playlist cozy: indie, alternative soft, cantautori.");
+        suggestions.push("Un po’ di ambient o post-rock per passeggiate tranquille.");
+        suggestions.push("Classica leggera o colonne sonore per musei e gallerie.");
+      } else {
+        suggestions.push("Indie pop e funk leggero per esplorare la città.");
+        suggestions.push("Electro chill / nu-disco per spostamenti in metro o treno.");
+        suggestions.push("Un mix di pop internazionale e qualche brano locale della città che visiti.");
+      }
+
+      return suggestions;
+    }
+
+    function setStatus(msg, type) {
+      statusMessage.textContent = msg;
+      statusMessage.className = "status " + (type || "");
+    }
+  </script>
+</body>
+</html>
