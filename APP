@@ -447,8 +447,7 @@
             🌦️🧳 Scansiona meteo & valigia
           </button>
           <span class="api-warning">
-            ⚙️ Usa l’API di <strong>OpenWeatherMap</strong>.<br />
-            Ricorda di inserire la tua API key nel codice!
+            ⚙️ Usa i dati meteo di <strong>Open-Meteo</strong> (gratuito, senza API key).
           </span>
         </div>
 
@@ -472,9 +471,7 @@
   </div>
 
   <script>
-    // ⚠️ INSERISCI QUI LA TUA API KEY DI OPENWEATHERMAP
-    const OPENWEATHER_API_KEY = "INSERISCI_LA_TUA_API_KEY_QUI";
-
+    // Array delle tappe
     const trip = [];
 
     const cityInput = document.getElementById("cityInput");
@@ -522,7 +519,7 @@
         meta.className = "trip-meta";
 
         const order = document.createElement("span");
-        order.textContent = `Tappa #${index + 1}`;
+        order.textContent = "Tappa #" + (index + 1);
         meta.appendChild(order);
 
         if (stop.date) {
@@ -533,7 +530,7 @@
             year: "numeric"
           });
           const dateSpan = document.createElement("span");
-          dateSpan.textContent = `📅 ${formatted}`;
+          dateSpan.textContent = "📅 " + formatted;
           meta.appendChild(dateSpan);
         } else {
           const noDate = document.createElement("span");
@@ -561,11 +558,6 @@
     scanWeatherBtn.addEventListener("click", async () => {
       if (trip.length === 0) {
         setStatus("Prima aggiungi almeno una tappa ✈️", "error");
-        return;
-      }
-
-      if (!OPENWEATHER_API_KEY || OPENWEATHER_API_KEY.startsWith("INSERISCI")) {
-        setStatus("❗ Inserisci la tua API key OpenWeatherMap nel codice per attivare il meteo in tempo reale.", "error");
         return;
       }
 
@@ -597,20 +589,76 @@
         }
       }
 
-      setStatus("Done! Scorri le tappe e sistema la valigia come un* pro ✨", "ok");
+      setStatus("Fatto! Scorri le tappe e sistema la valigia come un* pro ✨", "ok");
     });
 
-    async function fetchWeather(city) {
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(
-        city
-      )}&appid=${OPENWEATHER_API_KEY}&units=metric&lang=it`;
+    // --- Meteo: geocoding + current weather via Open-Meteo (NO API KEY) ---
 
-      const resp = await fetch(url);
-      if (!resp.ok) {
-        throw new Error("Weather API error");
+    async function fetchWeather(city) {
+      // 1) Geocoding per trovare lat/lon
+      const geoUrl = "https://geocoding-api.open-meteo.com/v1/search?name=" +
+        encodeURIComponent(city) +
+        "&count=1&language=it&format=json";
+
+      const geoResp = await fetch(geoUrl);
+      if (!geoResp.ok) {
+        throw new Error("Errore geocoding");
       }
-      return resp.json();
+      const geoData = await geoResp.json();
+      if (!geoData.results || geoData.results.length === 0) {
+        throw new Error("Città non trovata");
+      }
+
+      const place = geoData.results[0];
+      const latitude = place.latitude;
+      const longitude = place.longitude;
+
+      // 2) Chiamata meteo corrente
+      const weatherUrl =
+        "https://api.open-meteo.com/v1/forecast?latitude=" +
+        latitude +
+        "&longitude=" +
+        longitude +
+        "&current_weather=true&timezone=auto";
+
+      const weatherResp = await fetch(weatherUrl);
+      if (!weatherResp.ok) {
+        throw new Error("Errore meteo");
+      }
+      const weatherData = await weatherResp.json();
+      if (!weatherData.current_weather) {
+        throw new Error("Meteo non disponibile");
+      }
+
+      const code = weatherData.current_weather.weathercode;
+      const temp = weatherData.current_weather.temperature;
+      const mapped = mapWeatherCode(code);
+
+      return {
+        cityDisplay: place.name + (place.country ? " (" + place.country + ")" : ""),
+        temp,
+        description: mapped.text,
+        emoji: mapped.emoji
+      };
     }
+
+    // Mappa codice meteo -> testo + emoji (semplificata, in italiano)
+    function mapWeatherCode(code) {
+      if (code === 0) return { text: "cielo sereno", emoji: "☀️" };
+      if (code === 1 || code === 2) return { text: "poco nuvoloso", emoji: "🌤️" };
+      if (code === 3) return { text: "cielo nuvoloso", emoji: "☁️" };
+      if (code === 45 || code === 48) return { text: "nebbia o foschia", emoji: "🌫️" };
+      if (code === 51 || code === 53 || code === 55) return { text: "pioviggine", emoji: "🌦️" };
+      if (code === 61 || code === 63 || code === 65) return { text: "pioggia", emoji: "🌧️" };
+      if (code === 66 || code === 67) return { text: "pioggia gelata", emoji: "🌨️" };
+      if (code === 71 || code === 73 || code === 75 || code === 77) return { text: "neve", emoji: "❄️" };
+      if (code === 80 || code === 81 || code === 82) return { text: "rovesci di pioggia", emoji: "🌧️" };
+      if (code === 85 || code === 86) return { text: "rovesci di neve", emoji: "❄️" };
+      if (code === 95 || code === 96 || code === 99) return { text: "temporali", emoji: "⛈️" };
+      return { text: "meteo variabile", emoji: "🌈" };
+    }
+
+    // --- Costruzione card risultato ---
 
     function buildResultCard(stop, data) {
       const card = document.createElement("div");
@@ -619,29 +667,24 @@
       const main = document.createElement("div");
       const side = document.createElement("div");
 
-      // --- MAIN (meteo + valigia) ---
+      // MAIN (meteo + valigia)
       const header = document.createElement("div");
       header.className = "result-main-header";
 
       const cityName = document.createElement("div");
       cityName.className = "city-name";
-
-      const iconEmoji = pickWeatherEmoji(data);
-      cityName.innerHTML = `${iconEmoji} ${stop.city}`;
+      cityName.innerHTML = data.emoji + " " + stop.city;
 
       const weatherPill = document.createElement("div");
       weatherPill.className = "weather-pill";
 
-      const temp = Math.round(data.main.temp);
-      const conditionText = data.weather && data.weather[0] ? data.weather[0].description : "Meteo non disponibile";
-
       const tempSpan = document.createElement("span");
       tempSpan.className = "temp";
-      tempSpan.textContent = `${temp}°C`;
+      tempSpan.textContent = Math.round(data.temp) + "°C";
 
       const condSpan = document.createElement("span");
       condSpan.className = "conditions";
-      condSpan.textContent = conditionText;
+      condSpan.textContent = data.description;
 
       weatherPill.appendChild(tempSpan);
       weatherPill.appendChild(condSpan);
@@ -657,11 +700,12 @@
       packingTitle.innerHTML = "🧳 Packing tips";
 
       const packingBody = document.createElement("p");
-      packingBody.textContent = buildPackingAdvice(temp, conditionText);
+      packingBody.textContent = buildPackingAdvice(data.temp, data.description);
 
       const tag = document.createElement("div");
       tag.className = "tag";
-      tag.innerHTML = `<span class="badge">Outfit mood</span> ${buildOutfitTag(temp, conditionText)}`;
+      tag.innerHTML = '<span class="badge">Outfit mood</span> ' +
+        buildOutfitTag(data.temp, data.description);
 
       packingDiv.appendChild(packingTitle);
       packingDiv.appendChild(packingBody);
@@ -679,13 +723,18 @@
           month: "2-digit",
           year: "numeric"
         });
-        dateInfo.innerHTML = `📅 Arrivo previsto: <strong>${formatted}</strong>`;
+        dateInfo.innerHTML = "📅 Arrivo previsto: <strong>" + formatted + "</strong>";
         main.appendChild(dateInfo);
       }
 
+      const geoInfo = document.createElement("div");
+      geoInfo.className = "helper-text";
+      geoInfo.innerHTML = "📍 Localizzazione: <strong>" + data.cityDisplay + "</strong>";
+      main.appendChild(geoInfo);
+
       main.appendChild(packingDiv);
 
-      // --- SIDE (musica) ---
+      // SIDE (musica)
       const musicDiv = document.createElement("div");
       musicDiv.className = "music";
 
@@ -697,9 +746,9 @@
       musicBody.style.marginLeft = "16px";
       musicBody.style.listStyle = "'♪ '";
 
-      const suggestions = buildMusicSuggestions(temp, conditionText);
+      const suggestions = buildMusicSuggestions(data.temp, data.description);
 
-      suggestions.forEach((s) => {
+      suggestions.forEach(function (s) {
         const li = document.createElement("li");
         li.style.marginBottom = "2px";
         li.textContent = s;
@@ -717,16 +766,7 @@
       return card;
     }
 
-    function pickWeatherEmoji(data) {
-      if (!data.weather || !data.weather[0]) return "🌈";
-      const id = data.weather[0].id;
-      if (id >= 200 && id < 300) return "⛈️";
-      if (id >= 300 && id < 600) return "🌧️";
-      if (id >= 600 && id < 700) return "❄️";
-      if (id === 800) return "☀️";
-      if (id > 800) return "⛅";
-      return "🌈";
-    }
+    // --- Logica consigli outfit / valigia ---
 
     function buildPackingAdvice(temp, conditionText) {
       const condition = (conditionText || "").toLowerCase();
@@ -744,16 +784,16 @@
         base.push("Caldo intenso: vestiti super leggeri, cappellino, occhiali da sole e tanta acqua.");
       }
 
-      if (condition.includes("pioggia") || condition.includes("pioviggine") || condition.includes("temporale")) {
+      if (condition.includes("pioggia") || condition.includes("rovesci")) {
         base.push("Non dimenticare un impermeabile compatto o k-way e un ombrello pieghevole.");
       }
       if (condition.includes("neve")) {
         base.push("Scarpe impermeabili o doposci e calze termiche sono d’obbligo.");
       }
-      if (condition.includes("vento")) {
-        base.push("Aggiungi una giacca antivento o un guscio leggero.");
+      if (condition.includes("nebbia")) {
+        base.push("Meglio avere qualcosa di caldo in più per le serate umide.");
       }
-      if (condition.includes("sole") || condition.includes("sereno")) {
+      if (condition.includes("sereno") || condition.includes("cielo") || condition.includes("sole")) {
         base.push("Crema solare e occhiali da sole per goderti la luce senza pensieri.");
       }
 
@@ -772,11 +812,13 @@
       return "😎 Easy travel vibes";
     }
 
+    // --- Logica consigli musicali ---
+
     function buildMusicSuggestions(temp, conditionText) {
       const condition = (conditionText || "").toLowerCase();
       const suggestions = [];
 
-      if (condition.includes("pioggia") || condition.includes("temporale")) {
+      if (condition.includes("pioggia") || condition.includes("rovesci") || condition.includes("temporali")) {
         suggestions.push("Playlist lo-fi / chillhop per guardare la pioggia dal bar ☕");
         suggestions.push("Un po’ di jazz morbido o neo-soul per tenere alto il mood.");
         suggestions.push("Brani acustici soft per leggere o pianificare le prossime tappe.");
